@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  namespace: app
+spec:
+  type: ClusterIP
+  selector:
+    app: axum-k8s-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

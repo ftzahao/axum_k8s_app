@@ -1,0 +1,8 @@
+/target
+.git
+.gitignore
+Dockerfile
+.dockerignore
+k8s
+README.md
+INSTALL.md

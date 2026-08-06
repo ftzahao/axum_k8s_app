@@ -1,0 +1,13 @@
+# 非敏感配置。修改后 `kubectl rollout restart deployment/app` 即可生效。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app
+data:
+  # tracing 日志级别（应用层只输出 stdout，收集交给 Fluent Bit）
+  RUST_LOG: "info"
+  # 监听地址
+  BIND_ADDR: "0.0.0.0:8080"
+  # 连接池最大连接数（3 副本 × 10 需与 Postgres max_connections 匹配）
+  DB_POOL_MAX_SIZE: "10"

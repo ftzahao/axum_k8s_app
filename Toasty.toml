@@ -1,0 +1,7 @@
+# toasty 迁移配置，被 bin/cli.rs 的 Config::load() 读取
+# 生成/应用的迁移文件都放在 toasty/ 目录，提交进 git
+[migration]
+path = "toasty"
+prefix_style = "Sequential"
+checksums = false
+statement_breakpoints = true

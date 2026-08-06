@@ -1,0 +1,26 @@
+[package]
+name = "axum_k8s_app"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# ---- Web ----
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+
+# ---- Database（toasty）----
+toasty = { version = "0.9", features = ["postgresql", "jiff"] }
+toasty-cli = "0.9"            # 与 toasty 同版本号体系（0.9 起统一）
+jiff = { version = "0.2", features = ["serde"] }   # 与 toasty 0.9 内部使用的 jiff 0.2 对齐
+
+# ---- Serialization ----
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# ---- Logging ----
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+
+# ---- Misc ----
+anyhow = "1"                  # bin/cli.rs 使用
+thiserror = "2"               # AppError derive

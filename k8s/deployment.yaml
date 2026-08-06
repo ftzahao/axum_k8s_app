@@ -1,0 +1,94 @@
+# 应用 Deployment。
+# 部署前替换 image 为真实 registry 地址（见 k8s/README.md）。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: app
+  labels:
+    app: axum-k8s-app
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: axum-k8s-app
+  template:
+    metadata:
+      labels:
+        app: axum-k8s-app
+    spec:
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        runAsNonRoot: true
+      initContainers:
+        # 启动时自动运行 migration：先 apply 再启动主容器。
+        # 镜像内自带 CLI 二进制、Toasty.toml 与 toasty/ 迁移文件。
+        - name: migrate
+          image: axum-k8s-app:latest # TODO: 替换为 registry 地址
+          command: ["/usr/local/bin/cli", "migration", "apply"]
+          workingDir: /app
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          securityContext:
+            runAsNonRoot: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      containers:
+        - name: app
+          image: axum-k8s-app:latest # TODO: 替换为 registry 地址
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          # 存活探针：进程活着即可；失败 → K8s 重启容器
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # 就绪探针：DB 可达才收流量；失败 → 摘除 Service 端点，不重启
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # 优雅关闭：先让 Ingress/Service 摘流 10s（sleep 阻断 SIGTERM 传播），
+          # 再向应用进程发 SIGTERM → 应用内 with_graceful_shutdown 排空在途请求
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 10"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

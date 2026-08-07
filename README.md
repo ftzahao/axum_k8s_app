@@ -4,14 +4,14 @@
 
 ## 技术栈
 
-| 组件 | 说明 |
-|---|---|
-| Web | Axum 0.8 |
-| ORM | toasty 0.9（tokio-rs，`#[derive(Model)]` 定义 schema） |
-| 数据库 | PostgreSQL（toasty `postgresql` feature，连接池内置于 `Db`） |
-| 日志 | tracing + tracing-subscriber，JSON 行输出 stdout，`RUST_LOG` 控制级别 |
-| 迁移 | toasty-cli 项目内 CLI：`migration generate / apply`，K8s 中由 initContainer 自动执行 |
-| 部署 | 多阶段 Dockerfile（debian:bookworm-slim + 非 root）→ Deployment/Service/Ingress + Fluent Bit → Loki → Grafana |
+| 组件   | 说明                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------- |
+| Web    | Axum 0.8                                                                                                      |
+| ORM    | toasty 0.9（tokio-rs，`#[derive(Model)]` 定义 schema）                                                        |
+| 数据库 | PostgreSQL（toasty `postgresql` feature，连接池内置于 `Db`）                                                  |
+| 日志   | tracing + tracing-subscriber，JSON 行输出 stdout，`RUST_LOG` 控制级别                                         |
+| 迁移   | toasty-cli 项目内 CLI：`migration generate / apply`，K8s 中由 initContainer 自动执行                          |
+| 部署   | 多阶段 Dockerfile（debian:bookworm-slim + 非 root）→ Deployment/Service/Ingress + Fluent Bit → Loki → Grafana |
 
 ## 项目结构
 
@@ -34,10 +34,17 @@ k8s/                 全部 K8s 清单与部署手册
 ## 本地开发
 
 ```bash
-# 1. 起本地 PostgreSQL（macOS：Apple container 或 docker）
+# 1. 起本地 PostgreSQL（两种运行时任选其一）
+
+# Apple container
 container run -d --name pg-dev \
   -e POSTGRES_USER=app -e POSTGRES_PASSWORD=dev-password -e POSTGRES_DB=app \
   -p 5432:5432 docker.io/library/postgres:18
+
+# Docker 等价命令
+docker run -d --name pg-dev \
+  -e POSTGRES_USER=app -e POSTGRES_PASSWORD=dev-password -e POSTGRES_DB=app \
+  -p 5432:5432 postgres:18
 
 # 2. 生成迁移（改过模型后执行；首次运行）
 DATABASE_URL='postgresql://app:dev-password@localhost:5432/app' \
@@ -54,12 +61,12 @@ DATABASE_URL='postgresql://app:dev-password@localhost:5432/app' \
 
 ## 接口
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | /healthz | 存活探针 |
-| GET | /readyz | 就绪探针（DB `SELECT 1`） |
-| GET/POST | /api/users | 列表 / 创建 |
-| GET/PUT/DELETE | /api/users/{id} | 详情 / 更新 / 删除 |
+| 方法           | 路径            | 说明                      |
+| -------------- | --------------- | ------------------------- |
+| GET            | /healthz        | 存活探针                  |
+| GET            | /readyz         | 就绪探针（DB `SELECT 1`） |
+| GET/POST       | /api/users      | 列表 / 创建               |
+| GET/PUT/DELETE | /api/users/{id} | 详情 / 更新 / 删除        |
 
 错误响应统一格式：`{"error":{"code":"not_found|bad_request|conflict|internal","message":"..."}}`
 
@@ -67,6 +74,7 @@ DATABASE_URL='postgresql://app:dev-password@localhost:5432/app' \
 
 完整安装部署文档见 [INSTALL.md](INSTALL.md)（本地环境 → 构建镜像 → K8s 部署 → 日志链路 → 升级回滚 → 故障排查）。
 集群操作速查见 [k8s/README.md](k8s/README.md)。
+本地/测试/生产环境区分方案见 [ENVIRONMENTS.md](ENVIRONMENTS.md)（kustomize overlays）。
 
 ## 关键设计点
 

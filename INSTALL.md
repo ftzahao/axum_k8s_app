@@ -82,7 +82,7 @@
 macOS（Apple container）：
 
 ```bash
-container system start   # 首次需要
+container system start   # 首次需启动系统服务（Docker 用户对应操作是启动 Docker Desktop）
 container run -d --name pg-dev \
   -e POSTGRES_USER=app \
   -e POSTGRES_PASSWORD=dev-password \
@@ -152,7 +152,14 @@ docker stop pg-dev && docker rm pg-dev                # Docker
 
 ## 4. 构建与推送镜像
 
+两种运行时任选其一（Apple container 与 Docker 命令等价）：
+
 ```bash
+# Apple container
+container build -t <registry>/axum-k8s-app:<tag> .
+container image push <registry>/axum-k8s-app:<tag>
+
+# Docker 等价命令
 docker build -t <registry>/axum-k8s-app:<tag> .
 docker push <registry>/axum-k8s-app:<tag>
 ```
@@ -287,7 +294,13 @@ Grafana 配置数据源：**Connections → Data sources → Add data source →
 brew install kind
 kind create cluster --name dev
 
-# 加载镜像到 kind（比 push registry 快）
+# 加载镜像到 kind（比 push registry 快；两种运行时任选其一）
+
+# Apple container：先导出 OCI tar，再加载到 kind
+container image save -o axum-k8s-app.tar axum-k8s-app:latest
+kind load image-archive axum-k8s-app.tar
+
+# Docker 等价命令
 kind load docker-image axum-k8s-app:latest
 
 # 安装 ingress-nginx（kind 需要特殊配置：nodeport/ hostPort）
@@ -326,9 +339,13 @@ helm upgrade --install ingress-nginx ingress-nginx \
 DATABASE_URL='postgresql://...' cargo run --bin cli -- migration generate --name add_xxx
 git add toasty/ && git commit          # toasty/ 必须提交
 
-# 3. 构建推送新镜像
-docker build -t <registry>/axum-k8s-app:<new-tag> .
-docker push <registry>/axum-k8s-app:<new-tag>
+# 3. 构建推送新镜像（两种运行时任选其一）
+#    Apple container：
+container build -t <registry>/axum-k8s-app:<new-tag> .
+container image push <registry>/axum-k8s-app:<new-tag>
+#    Docker 等价命令：
+#    docker build -t <registry>/axum-k8s-app:<new-tag> .
+#    docker push <registry>/axum-k8s-app:<new-tag>
 
 # 4. 滚动发布（新 Pod 的 initContainer 自动 apply 增量迁移）
 kubectl -n app set image deploy/app app=<registry>/axum-k8s-app:<new-tag>
@@ -341,7 +358,12 @@ kubectl -n app rollout status deploy/app
 
 ```bash
 IMAGE=<registry>/axum-k8s-app:$(git rev-parse --short HEAD)
-docker build -t $IMAGE . && docker push $IMAGE
+
+# 构建并推送（Apple container）
+container build -t $IMAGE . && container image push $IMAGE
+# Docker 等价命令
+# docker build -t $IMAGE . && docker push $IMAGE
+
 kubectl -n app set image deploy/app app=$IMAGE
 ```
 

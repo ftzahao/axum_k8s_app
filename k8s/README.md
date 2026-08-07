@@ -12,9 +12,16 @@
 ## 1. 构建并推送镜像
 
 ```bash
-# 在项目根目录
+# 在项目根目录（两种运行时任选其一）
+
+# Apple container
+container build -t <registry>/axum-k8s-app:<tag> .
+container image push <registry>/axum-k8s-app:<tag>
+
+# Docker 等价命令
 docker build -t <registry>/axum-k8s-app:<tag> .
 docker push <registry>/axum-k8s-app:<tag>
+
 # 将 k8s/deployment.yaml 中两处 image 替换为 <registry>/axum-k8s-app:<tag>
 ```
 

@@ -6,7 +6,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{health, users},
+    handlers::{crash, health, users},
     middleware::request_log,
     AppState,
 };
@@ -29,6 +29,8 @@ pub fn build_router(state: AppState) -> Router {
                 .put(users::update_user)
                 .delete(users::delete_user),
         )
+        // 模拟崩溃：进程 abort（SIGABRT），用于验证 K8s livenessProbe 自动重启
+        .route("/unusual", get(crash::unusual))
         .layer(axum::middleware::from_fn(request_log::request_log))
         .with_state(state)
 }

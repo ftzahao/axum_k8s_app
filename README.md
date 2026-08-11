@@ -43,7 +43,7 @@ docker run -d --name pg-dev \
 
 # 2. 应用迁移（改过 src/models/ 后先 migration generate 再 apply；toasty/ 需提交 git）
 # Apple container 下连 PG 容器不要用 localhost（见下方⚠️），用 PG 容器的 VM IP
-export DATABASE_URL="postgresql://app:dev-password@$(container inspect pg-dev | awk '/ipv4Address/ {print $2}' | tr -d ',"' | cut -d/ -f1):5432/app"
+export DATABASE_URL="postgresql://app:dev-password@localhost:5432/app"
 cargo run --bin cli -- migration apply
 
 # 3. 启动服务（仓库有两个 binary，须用 --bin 指定）
@@ -67,7 +67,7 @@ curl -s -X POST http://localhost:8080/api/users \
 ```bash
 # Apple container（容器同在 VM 默认网络，直连 pg-dev 的 VM IP）
 container build -t axum-k8s-app:local .
-container inspect pg-dev | awk '/ipv4Address/ {print $2}' | tr -d ',"' | head -1   # 查 pg-dev 的 VM IP（取首条 ipv4）
+container ls --all | grep "pg-dev" # 查 pg-dev 的 VM IP
 container run -d --name app-dev \
   -e DATABASE_URL='postgresql://app:dev-password@<pg-dev 的 VM IP>:5432/app' \
   -e RUST_LOG=info \

@@ -29,7 +29,7 @@ spec:
         # 启动时自动运行 migration：先 apply 再启动主容器。
         # 镜像内自带 CLI 二进制、Toasty.toml 与 toasty/ 迁移文件。
         - name: migrate
-          image: axum-k8s-app:latest # TODO: 替换为 registry 地址
+          image: axum-k8s-app:0.1.0 # TODO: 替换为 registry 地址
           command: ["/usr/local/bin/cli", "migration", "apply"]
           workingDir: /app
           envFrom:
@@ -48,7 +48,7 @@ spec:
               memory: 128Mi
       containers:
         - name: app
-          image: axum-k8s-app:latest # TODO: 替换为 registry 地址
+          image: axum-k8s-app:0.1.0 # TODO: 替换为 registry 地址
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
